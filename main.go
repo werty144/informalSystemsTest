@@ -8,6 +8,8 @@ import (
 )
 
 func main() {
+	var stopChanel chan struct{}
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		tokens := strings.Fields(scanner.Text())
@@ -19,9 +21,9 @@ func main() {
 
 		switch command {
 		case "stop":
-			stop()
+			stop(&stopChanel)
 		case "start":
-			start()
+			start(&stopChanel)
 		case "play":
 			play()
 		default:
@@ -31,10 +33,14 @@ func main() {
 	}
 }
 
-func stop() {
-	os.Exit(0)
+func stop(stopChanel *chan struct{}) {
+	close(*stopChanel)
 }
 
 func play() { fmt.Println("Playing!") }
 
-func start() { fmt.Println("Starting!") }
+func start(stopChanel *chan struct{}) {
+	*stopChanel = make(chan struct{})
+	fmt.Println("Starting!")
+	go echo(*stopChanel)
+}
