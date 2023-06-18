@@ -3,8 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -22,6 +24,9 @@ func main() {
 		switch command {
 		case "stop":
 			stop(&stopChanel)
+			time.Sleep(1 * time.Second)
+			log.Println("Stopped.")
+			//os.Exit(0)
 		case "start":
 			start(&stopChanel)
 		case "play":
@@ -42,5 +47,5 @@ func play() { fmt.Println("Playing!") }
 func start(stopChanel *chan struct{}) {
 	*stopChanel = make(chan struct{})
 	fmt.Println("Starting!")
-	go echo(*stopChanel)
+	go startServer(*stopChanel)
 }
