@@ -4,13 +4,16 @@ import (
 	"bufio"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strings"
 	"time"
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	var stopChanel chan struct{}
+	start(&stopChanel)
 
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
@@ -46,6 +49,6 @@ func play() { fmt.Println("Playing!") }
 
 func start(stopChanel *chan struct{}) {
 	*stopChanel = make(chan struct{})
-	fmt.Println("Starting!")
-	go startServer(*stopChanel)
+	go startServer(3, 7, false, *stopChanel)
+	go startServer(3, 7, true, *stopChanel)
 }
