@@ -2,12 +2,14 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
 	"math"
 	"math/rand"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -28,15 +30,18 @@ func main() {
 		switch command {
 		case "stop":
 			stop(&stopChanel)
-			time.Sleep(1 * time.Second)
-			log.Println("Stopped.")
-			//os.Exit(0)
 		case "start":
-			start(3, 7, 5, 0.4, &stopChanel)
+			err, networkValue, maxValue, nAgents, liarsRatio := parseStartCommand(tokens)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			start(networkValue, maxValue, nAgents, liarsRatio, &stopChanel)
+			fmt.Println("ready")
 		case "play":
 			play()
 		default:
-			fmt.Println("Unknown command")
+			log.Println("Unknown command")
 			continue
 		}
 	}
@@ -44,9 +49,14 @@ func main() {
 
 func stop(stopChanel *chan struct{}) {
 	close(*stopChanel)
+	time.Sleep(1 * time.Second)
+	cleanFile()
+	os.Exit(0)
 }
 
-func play() { fmt.Println("Playing!") }
+func play() {
+	playGame()
+}
 
 func start(networkValue int, maxValue int, nAgents int, liarsRatio float64, stopChanel *chan struct{}) {
 	*stopChanel = make(chan struct{})
@@ -77,15 +87,54 @@ func createConfigFile(addresses []*net.TCPAddr) {
 	}
 	defer file.Close()
 
-	err = file.Truncate(0)
-	if err != nil {
-		log.Fatal("Error:", err)
-	}
-
 	for _, address := range addresses {
 		_, err = file.WriteString(address.String() + "\n")
 		if err != nil {
 			log.Fatal("Error:", err)
 		}
+	}
+}
+
+func parseStartCommand(tokens []string) (error, int, int, int, float64) {
+	usage := "start --value v --max-value max --num-agents number --liar-ratio ratio"
+	if len(tokens) != 9 {
+		return errors.New("wrong number of tokens. Usage: " + usage), 0, 0, 0, .0
+	}
+	if tokens[1] != "--value" ||
+		tokens[3] != "--max-value" ||
+		tokens[5] != "--num-agents" ||
+		tokens[7] != "--liar-ratio" {
+		return errors.New("wrong keys. Usage: " + usage), 0, 0, 0, .0
+	}
+
+	v, err := strconv.Atoi(tokens[2])
+	if err != nil {
+		return errors.New("v should be an integer. Usage: " + usage), 0, 0, 0, .0
+	}
+	maxV, err := strconv.Atoi(tokens[4])
+	if err != nil {
+		return errors.New("max should be an integer. Usage: " + usage), 0, 0, 0, .0
+	}
+	nAgents, err := strconv.Atoi(tokens[6])
+	if err != nil {
+		return errors.New("number of agents should be an integer. Usage: " + usage), 0, 0, 0, .0
+	}
+	ratio, err := strconv.ParseFloat(tokens[8], 64)
+	if err != nil {
+		return errors.New("ratio should be a float. Usage: " + usage), 0, 0, 0, .0
+	}
+	return nil, v, maxV, nAgents, ratio
+}
+
+func cleanFile() {
+	file, err := os.OpenFile("agents.config", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Fatal("Error:", err)
+	}
+	defer file.Close()
+
+	err = file.Truncate(0)
+	if err != nil {
+		log.Fatal("Error:", err)
 	}
 }

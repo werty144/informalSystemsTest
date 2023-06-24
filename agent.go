@@ -12,7 +12,7 @@ func startAgent(v int, maxV int, isLiar bool, stopChanel <-chan struct{}) *net.T
 	// Start listening to TCP
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		log.Fatal("Error starting the server:", err)
+		log.Fatal("Error starting the agent server:", err)
 	}
 
 	// Periodically check if it's needed to quite the server
