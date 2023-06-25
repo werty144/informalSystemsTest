@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -13,7 +14,14 @@ import (
 
 func playGame() {
 	addresses := getAgentAddresses()
+	err, networkValue := getNetworkValue(addresses)
+	if err != nil {
+		log.Println(err)
+	}
+	fmt.Printf("The network value is %d\n", networkValue)
+}
 
+func getNetworkValue(addresses []net.TCPAddr) (error, int) {
 	var values ThreadSafeSlice
 	var wg sync.WaitGroup
 	wg.Add(len(addresses))
@@ -23,12 +31,11 @@ func playGame() {
 	}
 	wg.Wait()
 	if len(values.slice) != len(addresses) {
-		log.Printf("Received %d out of %d values", len(values.slice), len(addresses))
-		return
+		return errors.New(fmt.Sprintf("Received %d out of %d values", len(values.slice), len(addresses))), 0
 	}
 
 	networkValue := getMode(values.slice)
-	fmt.Printf("The network value is %d\n", networkValue)
+	return nil, networkValue
 }
 
 func getAgentsValue(addr net.TCPAddr, values *ThreadSafeSlice, wg *sync.WaitGroup) {
